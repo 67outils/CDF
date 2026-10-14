@@ -66,6 +66,11 @@ td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertic
 .aud .tips.ok{border-color:#46d9a6;background:rgba(70,217,166,.06)}.aud .tips ul{margin:4px 0 0;padding-left:18px}
 body.red{--bg:#150606;--panel:#210a0a;--ink:#ff9a8c;--mute:#b45a50;--line:#4a1a17;--acc:#ff6b5e}
 body.red .c,body.red .sc span{filter:sepia(1) saturate(3) hue-rotate(-45deg)}
+
+.two{display:flex;justify-content:center;gap:8px}.two svg{margin:2px 0 4px!important}
+.c.wx{height:50px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#1a2740;position:relative;font:10px system-ui,sans-serif;color:var(--mute)}
+.c.wx svg{display:block}.c.wx .bd{position:absolute;top:2px;right:2px;display:flex;gap:1px}
+.wxleg span{display:inline-flex;align-items:center;gap:4px;font:12px system-ui,sans-serif;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -82,6 +87,7 @@ body.red .c,body.red .sc span{filter:sepia(1) saturate(3) hue-rotate(-45deg)}
   <button id="redmode" type="button" aria-pressed="false">Lumière rouge</button>
 </div>
 <div class="legend">Score : <i style="background:hsl(0,65%,38%)"></i>0 <i style="background:hsl(60,65%,38%)"></i>50 <i style="background:hsl(120,65%,34%)"></i>100 · CP = ciel profond · PL = planétaire · AU = aurore (chance en %, fiabilité indiquée dessous)</div>
+<div class="legend wxleg" id="wxleg" style="flex-wrap:wrap;gap:12px;margin-top:6px"></div>
 <div id="status" class="note">Chargement des prévisions…</div>
 <div id="auerr"></div>
 <h2>Aurores : conditions en direct</h2>
@@ -543,16 +549,27 @@ async function init(){
       const an=aur.byKey.get(k), auOk=!!(an&&!an.empty);
       const auTxt=auOk?AUR.fmtP(an.P):'–', auC=auOk?auColor(an.P):'#2a3650', fiab=auOk?Math.round(an.R*100):null;
       cells.forEach(c=>{c.au=auOk?an.blocks.find(x=>c.ms>=x.b&&c.ms<x.b+3*3600000)||null:null});
+      const nw=nightWx(cells);
 
       const tile=document.createElement('button'); tile.className='tile';
-      tile.innerHTML=`<b>${fmtShort.format(date)}</b>${moonSVG(mid.a.illum,mid.a.waxing,40)}
-        <div>${Math.round(mid.a.illum*100)} %</div>
+      tile.innerHTML=`<b>${fmtShort.format(date)}</b><div class="two">${wxSVG(nw.k,38)}${moonSVG(mid.a.illum,mid.a.waxing,38)}</div>
+        <div>${Math.round(mid.a.illum*100)} %</div><div class="fiab">${nw.label}, ${nw.t}</div>
         <div class="sc"><span style="background:${col(bd?bd.avg:0)}" title="Ciel profond">CP ${bd?bd.avg:'–'}</span><span style="background:${col(bp?bp.avg:0)}" title="Planétaire">PL ${bp?bp.avg:'–'}</span><span style="background:${auC}" title="Chance d'aurore">AU ${auTxt}</span></div>${auOk?`<div class="fiab">fiabilité aurore ${fiab} %</div>`:''}`;
       tile.onclick=()=>document.getElementById('n'+k).scrollIntoView({behavior:'smooth'});
       ov.appendChild(tile);
 
       const el=document.createElement('section'); el.className='night'; el.id='n'+k;
-      el.innerHTML=`<div class="head">${moonSVG(mid.a.illum,mid.a.waxing,52)}<div class="t"><b>Nuit du ${new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'long',day:'numeric'}).format(date)} au ${fmtDay.format(new Date(date.getTime()+86400000))}</b>${trend?'<span class="flag">tendance</span>':''}<div class="note">${name}, ${Math.round(mid.a.illum*100)} % éclairée</div></div></div>`;
+      el.innerHTML=`<div class="head">${wxSVG(nw.k,52)}${moonSVG(mid.a.illum,mid.a.waxing,52)}<div class="t"><b>Nuit du ${new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'long',day:'numeric'}).format(date)} au ${fmtDay.format(new Date(date.getTime()+86400000))}</b>${trend?'<span class="flag">tendance</span>':''}<div class="note">${name}, ${Math.round(mid.a.illum*100)} % éclairée</div><div class="note">${nw.label} · ${nw.t} · rafales max ${nw.g} km/h</div></div></div>`;
+      { const wr=document.createElement('div'); wr.className='row'; wr.innerHTML='<span class="lbl">Météo</span>';
+        const ws=document.createElement('div'); ws.className='strip';
+        cells.forEach(c=>{
+          const x=wxFromCell(c.h), d=document.createElement('button'); d.className='c wx';
+          d.innerHTML=(x.wind||x.dew?`<span class="bd">${x.wind?BD_WIND:''}${x.dew?BD_DEW:''}</span>`:'')+wxSVG(x.k,24)+`<span>${Math.round(c.h.t)}°</span>`;
+          d.title=`${new Date(c.ms).toLocaleTimeString('fr-FR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'})} : ${x.label}, ${c.h.t.toFixed(1)} °C, nuages ${c.h.cloud} %`+(x.wind?', vent fort':'')+(x.dew?', buée probable':'');
+          d.onclick=()=>{document.querySelectorAll('.c.sel').forEach(y=>y.classList.remove('sel'));d.classList.add('sel');detail(c)};
+          ws.appendChild(d);
+        });
+        wr.appendChild(ws); el.appendChild(wr); }
       const w=x=>x?`${fmtH.format(x.from)} – ${fmtH.format(x.to)} (moy. ${x.avg})`:'nuit trop courte';
       [['Ciel profond','ds',bd],['Planétaire','pl',bp]].forEach(([n,key,b])=>{
         const row=document.createElement('div'); row.className='row';
@@ -600,10 +617,46 @@ async function init(){
 }
 function detail(c){
   const h=c.h, f=v=>v==null?'n/d':v.toFixed(0);
-  document.getElementById('detail').innerHTML=`${moonSVG(c.a.illum,c.a.waxing,44)}<div><b>${fmtDay.format(new Date(c.ms))}, ${fmtH.format(new Date(c.ms))}</b> : ciel profond <b>${c.ds}</b>, planétaire <b>${c.pl}</b> (seeing estimé ${c.seeing}/100)<br>
+  document.getElementById('detail').innerHTML=`${wxSVG(wxFromCell(c.h).k,44)}${moonSVG(c.a.illum,c.a.waxing,44)}<div><b>${fmtDay.format(new Date(c.ms))}, ${fmtH.format(new Date(c.ms))}</b> (${wxFromCell(c.h).label}) : ciel profond <b>${c.ds}</b>, planétaire <b>${c.pl}</b> (seeing estimé ${c.seeing}/100)<br>
   Nuages ${h.cloud} % (bas ${h.low}, moyens ${h.mid}, hauts ${h.high}) · T ${h.t.toFixed(1)} °C, rosée ${h.td.toFixed(1)} °C (écart ${(h.t-h.td).toFixed(1)} °C) · HR ${h.rh} % · Visibilité ${(h.vis/1000).toFixed(0)} km<br>
   Vent ${h.w10.toFixed(1)} m/s, rafales ${h.gust.toFixed(1)} m/s · Jet 250 hPa ${f(h.j250)} m/s · Lune ${c.a.moon.toFixed(0)}° au-dessus de l'horizon (${Math.round(c.a.illum*100)} %)${c.au?`<br>Aurore (créneau ${AUR.hm(c.au.t0)}–${AUR.hm(c.au.t1)}) : Kp ${AUR.n1(c.au.kp)} (${AUR.gScale(c.au.kp)}), chance ${AUR.fmtP(c.au.p*100)} %`:''}</div>`;
 }
+
+/* ===== Pictogrammes météo ===== */
+const CLOUD='M13 36h22a7 7 0 0 0 .8-13.95A10 10 0 0 0 16.4 19.6 8.2 8.2 0 0 0 13 36z';
+const MOON=(x,y,s)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M30 6A17 17 0 1 0 42 30 13 13 0 0 1 30 6z" fill="#e8e4d6"/>`;
+const STAR=(x,y,s)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0-4L1-1 4 0 1 1 0 4-1 1-4 0-1-1z" fill="#f3efe0"/>`;
+const WXI={
+ clear:{label:'Ciel dégagé',svg:MOON(0,0,1)+STAR(8,12,1.3)+STAR(40,12,1)+STAR(14,40,.9)},
+ few:{label:'Quelques nuages',svg:MOON(-6,-6,.85)+`<path transform="translate(10 8) scale(.8)" d="${CLOUD}" fill="#c9d3e6"/>`},
+ cloudy:{label:'Nuageux',svg:MOON(-8,-8,.7)+`<path d="${CLOUD}" fill="#b5c0d8"/>`},
+ overcast:{label:'Couvert',svg:`<path transform="translate(-5 -8) scale(.9)" d="${CLOUD}" fill="#6f7a94"/><path transform="translate(5 4) scale(.9)" d="${CLOUD}" fill="#8e99b3"/>`},
+ cirrus:{label:'Voile de cirrus',svg:MOON(-4,-6,.8)+`<g fill="none" stroke="#bccaea" stroke-width="2.4" stroke-linecap="round"><path d="M8 30q8-6 16 0t16 0"/><path d="M12 37q7-5 14 0t12 0" opacity=".7"/><path d="M6 23q6-4 12 0" opacity=".6"/></g>`},
+ rain:{label:'Pluie',svg:`<path transform="translate(0 -6)" d="${CLOUD}" fill="#6f7a94"/><g stroke="#6fb3ff" stroke-width="2.6" stroke-linecap="round"><path d="M17 36l-2 6M25 36l-2 6M33 36l-2 6"/></g>`},
+ fog:{label:'Brouillard',svg:`<g stroke="#aab4c8" stroke-width="3" stroke-linecap="round"><path d="M8 16h32M12 24h28M8 32h32M14 40h22"/></g>`}
+};
+function wxSVG(k,size){return `<svg width="${size}" height="${size}" viewBox="0 0 48 48" role="img" aria-label="${WXI[k].label}">${WXI[k].svg}</svg>`}
+function wxClass(h){
+  let k='clear';
+  if(h.precip>0.1) k='rain';
+  else if(h.vis<2000) k='fog';
+  else if(h.cloud>=85) k='overcast';
+  else if(h.cloud>=15&&h.low<20&&h.mid<20&&h.high>=15) k='cirrus';
+  else if(h.cloud>=55) k='cloudy';
+  else if(h.cloud>=25) k='few';
+  return {k,label:WXI[k].label,wind:h.gust>11,dew:(h.t-h.td)<2};
+}
+const wxFromCell=h=>wxClass(h);
+function nightWx(cells){
+  const m=f=>cells.reduce((s,c)=>s+f(c.h),0)/cells.length, n=cells.length;
+  const rainShare=cells.filter(c=>c.h.precip>0.1).length/n, fogShare=cells.filter(c=>c.h.vis<2000).length/n;
+  const x=wxClass({cloud:m(h=>h.cloud),low:m(h=>h.low),mid:m(h=>h.mid),high:m(h=>h.high),precip:rainShare>=.3?1:0,vis:fogShare>=.3?0:1e5,gust:Math.max(...cells.map(c=>c.h.gust)),t:0,td:9});
+  const ts=cells.map(c=>c.h.t);
+  return {k:x.k,label:x.label,t:`${Math.round(Math.min(...ts))} à ${Math.round(Math.max(...ts))} °C`,g:Math.round(Math.max(...cells.map(c=>c.h.gust))*3.6)};
+}
+const BD_WIND='<svg width="10" height="10" viewBox="0 0 10 10" aria-label="Vent fort"><path d="M1 3h5a1.5 1.5 0 1 0-1.5-1.5M1 6h7a1.5 1.5 0 1 1-1.5 1.5" fill="none" stroke="#f0b84a" stroke-width="1.2" stroke-linecap="round"/></svg>';
+const BD_DEW='<svg width="10" height="10" viewBox="0 0 10 10" aria-label="Risque de buée"><path d="M5 1C3 4 2 5 2 6.5a3 3 0 0 0 6 0C8 5 7 4 5 1z" fill="#6fb3ff"/></svg>';
+document.getElementById('wxleg').innerHTML='Météo : '+Object.keys(WXI).map(k=>`<span>${wxSVG(k,22)}${WXI[k].label}</span>`).join('')+`<span>${BD_WIND}vent fort (rafales &gt; 40 km/h)</span><span>${BD_DEW}buée probable (écart à la rosée &lt; 2 °C)</span>`;
 const auColor=p=>col(Math.min(100,p*2.5));
 let running=false;
 async function refresh(){
