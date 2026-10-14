@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astro – Champ du Feu : ciel profond, planétaire et aurores sur 15 nuits</title>
+<style>
+:root{--bg:#0d1420;--panel:#152033;--ink:#e6edf7;--mute:#8fa0b8;--line:#243350;--acc:#7fc4ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.7rem;margin:.2em 0}
+h2{font-size:1.15rem;margin:1.6em 0 .5em;color:var(--acc)}
+.sub,.note{color:var(--mute);font-size:.88rem;margin:.3em 0}
+a{color:var(--acc)}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.links a{border:1px solid var(--line);padding:6px 12px;border-radius:6px;text-decoration:none;background:var(--panel)}
+.overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:12px 0}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;cursor:pointer;color:var(--ink);font:12px/1.3 system-ui,sans-serif}
+.tile:focus-visible{outline:2px solid #fff}
+.tile b{display:block;text-transform:capitalize;margin-bottom:4px}
+.tile svg{display:block;margin:2px auto 4px}
+.sc{display:flex;gap:4px;justify-content:center;margin-top:4px}
+.sc span{flex:1;border-radius:3px;padding:2px 0;color:#fff;font-weight:600}
+.night{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:12px 0;scroll-margin-top:10px}
+.head{display:flex;gap:12px;align-items:center}
+.head .t{flex:1}
+.head b{font-size:1.05rem;text-transform:capitalize}
+.row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.lbl{width:96px;flex:none;font-size:.82rem;color:var(--mute)}
+.strip{display:flex;flex:1;gap:2px}
+.c{flex:1;min-width:0;height:34px;border-radius:3px;font:11px/34px system-ui,sans-serif;text-align:center;color:#fff;cursor:pointer;border:0;padding:0}
+.c:focus-visible,.c.sel{outline:2px solid #fff}
+.best{font-size:.82rem;color:var(--mute);margin:2px 0 0 104px}
+.flag{display:inline-block;font:11px system-ui;border:1px solid #b88a2e;color:#e0b45a;border-radius:4px;padding:0 6px;margin-left:6px}
+#detail{position:sticky;bottom:0;background:#0a111c;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-top:14px;font:13px/1.5 system-ui,sans-serif;min-height:44px;display:flex;gap:12px;align-items:center}
+iframe{width:100%;height:460px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;font-family:system-ui,sans-serif}
+td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.legend{display:flex;gap:4px;align-items:center;font:12px system-ui;color:var(--mute)}
+.legend i{width:28px;height:10px;display:inline-block}
+@media(max-width:600px){.lbl{width:60px;font-size:.72rem}.best{margin-left:68px}.c{font-size:9px}}
+
+.links button{font:inherit;color:var(--ink);cursor:pointer;border:1px solid var(--line);padding:6px 12px;border-radius:6px;background:var(--panel)}
+.links button[disabled]{opacity:.55;cursor:progress}
+.tile{min-width:0}.sc{flex-wrap:wrap}.sc span{padding:2px 4px!important;min-width:44px}
+.fiab{font:11px system-ui,sans-serif;color:var(--mute);margin-top:3px}
+.live{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.live>div{padding:12px 14px}
+.live .k,.live .s{color:var(--mute);font:12px system-ui,sans-serif}
+.live .v{font-size:1.6rem;line-height:1.15}
+.alerts{list-style:none;padding:0;margin:10px 0 0;font:13px system-ui,sans-serif}
+.alerts li{padding:5px 0;border-bottom:1px dashed var(--line);color:var(--mute)}
+.alerts li b{color:var(--ink);font-weight:500}
+.err{border:1px solid #e8576f;padding:10px 12px;border-radius:6px;margin:10px 0;font:13px system-ui,sans-serif}
+.src{list-style:none;margin:0;padding:0;font:13px system-ui,sans-serif}
+.src li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line)}
+.src .ok{color:#46d9a6}.src .ko{color:#e8576f}
+.aud{margin-top:10px;font:13px/1.5 system-ui,sans-serif}.aud>summary{cursor:pointer;color:var(--acc)}
+.aud h4{font-size:1rem;margin:14px 0 6px;color:#46d9a6;font-weight:600}
+.aud .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 28px}
+.aud dl{margin:0}.aud dl>div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(128,140,200,.14)}
+.aud dt{color:var(--mute)}.aud dd{margin:0;text-align:right}
+.aud caption{text-align:left;font-weight:600;color:#46d9a6;padding:14px 0 4px}
+.aud .tips{margin-top:12px;padding:10px 12px;border-left:3px solid #f0b84a;background:rgba(240,184,74,.07)}
+.aud .tips.ok{border-color:#46d9a6;background:rgba(70,217,166,.06)}.aud .tips ul{margin:4px 0 0;padding-left:18px}
+body.red{--bg:#150606;--panel:#210a0a;--ink:#ff9a8c;--mute:#b45a50;--line:#4a1a17;--acc:#ff6b5e}
+body.red .c,body.red .sc span{filter:sepia(1) saturate(3) hue-rotate(-45deg)}
+</style>
+</head>
+<body>
+<main>
+<h1>Ciel profond, planétaire et aurores : 15 prochaines nuits</h1>
+<p class="sub">Sommet du Champ du Feu (Alsace), environ 1 099 m. Données Open-Meteo, mises à jour à chaque ouverture de la page.</p>
+<div class="links">
+  <a href="https://www.meteoblue.com/fr/meteo/webcams/champ-du-feu_france_7667432" target="_blank" rel="noopener">Webcams du Champ du Feu</a>
+  <a href="https://www.meteoblue.com/fr/meteo/semaine/champ-du-feu_france_7667432" target="_blank" rel="noopener">Meteoblue (seeing, astro)</a>
+  <a href="https://clearoutside.com/forecast/48.39/7.27" target="_blank" rel="noopener">Clear Outside</a>
+  <a href="https://www.swpc.noaa.gov/products/aurora-30-minute-forecast" target="_blank" rel="noopener">Carte d'aurore NOAA 30 min</a>
+  <a href="https://www.swpc.noaa.gov/products/real-time-solar-wind" target="_blank" rel="noopener">Vent solaire en temps réel</a>
+  <button id="refresh" type="button">Actualiser</button>
+  <button id="redmode" type="button" aria-pressed="false">Lumière rouge</button>
+</div>
+<div class="legend">Score : <i style="background:hsl(0,65%,38%)"></i>0 <i style="background:hsl(60,65%,38%)"></i>50 <i style="background:hsl(120,65%,34%)"></i>100 · CP = ciel profond · PL = planétaire · AU = aurore (chance en %, fiabilité indiquée dessous)</div>
+<div id="status" class="note">Chargement des prévisions…</div>
+<div id="auerr"></div>
+<h2>Aurores : conditions en direct</h2>
+<div id="live"><p class="note">Chargement…</p></div>
+
+<h2>Vue d'ensemble</h2>
+<p class="note">Pour chaque nuit : meilleure fenêtre de 3 h, en ciel profond (CP) et en planétaire (PL), plus la chance d'aurore de la nuit (AU) avec son indice de fiabilité. Au-delà de 3 jours, la fiabilité des aurores est faible : le Kp ne se prévoit qu'à court terme. Cliquez sur une nuit pour le détail.</p>
+<div id="overview" class="overview"></div>
+
+<h2>Détail heure par heure</h2>
+<div id="nights"></div>
+<div id="detail">Touchez ou cliquez sur une heure pour voir le détail.</div>
+
+<h2>Carte des nuages (Windy)</h2>
+<iframe loading="lazy" title="Windy" src="https://embed.windy.com/embed2.html?lat=48.386&lon=7.269&detailLat=48.386&detailLon=7.269&width=650&height=450&zoom=7&level=surface&overlay=clouds&product=ecmwf&menu=&message=true&marker=true&calendar=now&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C"></iframe>
+
+<h2>Sources de données</h2>
+<ul class="src" id="sources"></ul>
+
+<h2>Méthode de calcul</h2>
+<table>
+<tr><th>Ciel profond</th><td>Nuages (cirrus pondérés) × [humidité 35 %, écart température – point de rosée 25 %, visibilité 20 %, vent et rafales 20 %] × pénalité Lune (phase × hauteur). Heures retenues : Soleil à plus de 12° sous l'horizon.</td></tr>
+<tr><th>Planétaire</th><td>Nuages × [seeing estimé 60 %, vent au sol 20 %, stabilité thermique 20 %]. Le seeing est estimé par le vent à 250 hPa (jet stream) et son cisaillement avec 700 hPa.</td></tr>
+<tr><th>Aurore</th><td>Nuit découpée en créneaux de 3 h calés sur l'indice Kp (UTC). Pour chaque créneau : chance géomagnétique (Kp prévu avec marge d'incertitude croissante, asymétrique vers le haut) × part de ciel dégagé (moyenne de deux modèles météo : défaut et ECMWF IFS) × facteur Lune × durée de nuit sombre. Le meilleur créneau compte pleinement, les autres à 30 %. Kp prévu NOAA à 3 jours, puis tendance de la perspective à 27 jours ; sur la nuit en cours, Bz et vitesse du vent solaire mesurés par satellite ajustent le Kp. Léger facteur saisonnier favorable aux équinoxes.</td></tr>
+<tr><th>Fiabilité aurore</th><td>Moyenne géométrique de la fiabilité géomagnétique (chute vite après 2 jours) et de la fiabilité météo (baisse avec l'échéance et le désaccord des modèles). Calage sur la nuit du 10 au 11 octobre 2026 : un CME a porté le Kp à 7 (G3) alors que G1 à G2 était annoncé. Les prévisions Kp sous-estiment les CME ; veilles et alertes NOAA servent de plancher.</td></tr>
+<tr><th>Fiabilité CP / PL</th><td>Au-delà de 7 jours, les nuits sont marquées « tendance » : seule la tendance générale (anticyclone ou perturbation) est utilisable, pas l'heure exacte. Si le jet stream n'est pas fourni pour une heure, le seeing est supposé moyen.</td></tr>
+</table>
+<p class="note">Limites : aucun modèle gratuit ne fournit un vrai seeing. Confirmez avec Meteoblue Astronomy avant de monter le matériel. Le sommet est souvent au-dessus des brouillards de la plaine : vérifiez les webcams. Pollution lumineuse non modélisée (Bortle 4 environ). Pour une planète, vérifiez sa hauteur (idéalement plus de 30°). Les images de la Lune sont calculées pour l'hémisphère nord, vue à l'œil nu.</p>
+<p class="note">Aurores : NOAA Space Weather Prediction Center (Kp, vent solaire, alertes) et Open-Meteo. Ces valeurs sont des estimations pratiques pour décider d'une sortie, pas des probabilités scientifiques. Revérifiez Bz, la carte NOAA et les éclaircies avant de monter.</p>
+</main>
+<script>
+/* ===== Module aurores (NOAA + météo) ===== */
+(() => {
+'use strict';
+const CFG = {lat:48.385, lon:7.267, elev:1099};
+const H = 3600000, DAY = 86400000, STEP = 600000, TZ = 'Europe/Paris';
+const $ = s => document.querySelector(s);
+const SWPC = 'https://services.swpc.noaa.gov/';
+const MO = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mean = a => { const v = a.filter(x => x!=null && isFinite(x)); return v.length ? v.reduce((p,c)=>p+c,0)/v.length : null; };
+const n1 = x => x==null ? '–' : x.toFixed(1).replace('.',',');
+const n0 = x => x==null ? '–' : String(Math.round(x));
+
+const fHM = new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+const fLong = new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'long',day:'numeric',month:'long'});
+const fDay = new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,day:'numeric'});
+const fWd = new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'short'});
+const fParts = new Intl.DateTimeFormat('en-GB',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+const hm = t => fHM.format(new Date(t));
+function parisParts(ms){ const o={}; fParts.formatToParts(new Date(ms)).forEach(x=>o[x.type]=x.value); return {y:+o.year,m:+o.month,d:+o.day,h:+o.hour,mi:+o.minute}; }
+function parisWallToUtc(y,m,d,h){ const target=Date.UTC(y,m-1,d,h); let t=target; for(let i=0;i<2;i++){ const p=parisParts(t); t -= (Date.UTC(p.y,p.m-1,p.d,p.h,p.mi)-target); } return t; }
+const parseUTC = s => Date.parse(String(s).trim().replace(' ','T').replace(/Z$/,'')+'Z');
+
+/* ---------- Soleil / Lune (calcul local) ---------- */
+const rad = Math.PI/180, OBL = rad*23.4397, LW = rad*-CFG.lon, PHI = rad*CFG.lat;
+const RA = (l,b)=>Math.atan2(Math.sin(l)*Math.cos(OBL)-Math.tan(b)*Math.sin(OBL),Math.cos(l));
+const DEC = (l,b)=>Math.asin(Math.sin(b)*Math.cos(OBL)+Math.cos(b)*Math.sin(OBL)*Math.sin(l));
+const ALT = (Hh,phi,d)=>Math.asin(Math.sin(phi)*Math.sin(d)+Math.cos(phi)*Math.cos(d)*Math.cos(Hh));
+const SID = (d,lw)=>rad*(280.16+360.9856235*d)-lw;
+function sunC(d){ const M=rad*(357.5291+0.98560028*d); const C=rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M)); const L=M+C+rad*102.9372+Math.PI; return {dec:DEC(L,0),ra:RA(L,0)}; }
+function moonC(d){ const L=rad*(218.316+13.176396*d), M=rad*(134.963+13.064993*d), F=rad*(93.272+13.22935*d); const l=L+rad*6.289*Math.sin(M), b=rad*5.128*Math.sin(F); return {ra:RA(l,b),dec:DEC(l,b),dist:385001-20905*Math.cos(M)}; }
+function skyAt(t){
+  const d = t/DAY - 0.5 + 2440588 - 2451545;
+  const s = sunC(d), m = moonC(d), st = SID(d,LW);
+  const sunAlt = ALT(st-s.ra,PHI,s.dec)/rad, moonAlt = ALT(st-m.ra,PHI,m.dec)/rad;
+  const sd = 149598000;
+  const phi = Math.acos(clamp(Math.sin(s.dec)*Math.sin(m.dec)+Math.cos(s.dec)*Math.cos(m.dec)*Math.cos(s.ra-m.ra),-1,1));
+  const inc = Math.atan2(sd*Math.sin(phi), m.dist-sd*Math.cos(phi));
+  const ang = Math.atan2(Math.cos(s.dec)*Math.sin(s.ra-m.ra), Math.sin(s.dec)*Math.cos(m.dec)-Math.cos(s.dec)*Math.sin(m.dec)*Math.cos(s.ra-m.ra));
+  return {sunAlt, moonAlt, illum:(1+Math.cos(inc))/2, phase:0.5+0.5*inc*(ang<0?-1:1)/Math.PI};
+}
+function phaseName(p){ if(p<0.03||p>0.97)return 'Nouvelle Lune'; if(p<0.22)return 'Premier croissant'; if(p<0.28)return 'Premier quartier'; if(p<0.47)return 'Gibbeuse croissante'; if(p<0.53)return 'Pleine Lune'; if(p<0.72)return 'Gibbeuse décroissante'; if(p<0.78)return 'Dernier quartier'; return 'Dernier croissant'; }
+const moonB = (alt,illum) => alt<=0 ? 0 : illum*Math.sqrt(Math.sin(alt*rad));
+
+/* ---------- Modèle géomagnétique ---------- */
+const PG = [[0,.2],[2,.3],[3,.8],[4,2.5],[5,9],[6,27],[7,58],[8,82],[9,95]];
+function pgeo(kp){ kp=clamp(kp,0,9); for(let i=1;i<PG.length;i++){ if(kp<=PG[i][0]){ const [k0,v0]=PG[i-1],[k1,v1]=PG[i]; return (v0+(v1-v0)*(kp-k0)/(k1-k0))/100; } } return PG[PG.length-1][1]/100; }
+function pgeoExp(kp,sig){ if(sig<0.05) return pgeo(kp); let sw=0,sp=0; for(let k=-2;k<=2.001;k+=0.5){ const w=Math.exp(-0.5*k*k); const off=k<0?k*sig*0.7:k*sig*1.4; sw+=w; sp+=w*pgeo(kp+off); } return sp/sw; }
+const gScale = kp => kp>=9?'G5':kp>=8?'G4':kp>=7?'G3':kp>=6?'G2':kp>=5?'G1':'sous G1';
+
+/* ---------- Réseau ---------- */
+async function fetchWith(url,kind){
+  const c=new AbortController(); const to=setTimeout(()=>c.abort(),20000);
+  try{ const r=await fetch(url,{signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return kind==='text'?await r.text():await r.json(); }
+  finally{ clearTimeout(to); }
+}
+const viaRelay=new Set();
+async function noaaAny(paths,kind){ let err; for(const p of paths){ try{ return await noaa(p,kind); }catch(e){ err=e; } } throw err; }
+async function noaa(path,kind){
+  const url=SWPC+path;
+  try{ return await fetchWith(url+'?_='+Math.floor(Date.now()/60000),kind); }
+  catch(e1){
+    try{ const d=await fetchWith('https://api.allorigins.win/raw?url='+encodeURIComponent(url),kind); viaRelay.add(path); return d; }
+    catch(e2){ throw new Error(e1.message+' (relais : '+e2.message+')'); }
+  }
+}
+const rowsToObjects = arr => { if(!Array.isArray(arr)||!arr.length) return []; if(Array.isArray(arr[0])){ const h=arr[0]; return arr.slice(1).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]]))); } return arr; };
+const omURL = (model,vars) => `https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}&elevation=${CFG.elev}&hourly=${vars}&forecast_days=16&timezone=GMT&wind_speed_unit=kmh`+(model?`&models=${model}`:'');
+const VARS_A = 'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m,dew_point_2m,wind_speed_10m,wind_gusts_10m,precipitation,visibility';
+const VARS_B = 'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation';
+
+function parseKp(json){ const map=new Map(); rowsToObjects(json).forEach(r=>{ const t=parseUTC(r.time_tag), kp=parseFloat(r.kp); if(isFinite(t)&&isFinite(kp)) map.set(t,{kp,type:String(r.observed||'predicted')}); }); return map; }
+function parse27(txt){ const map=new Map(); const mo=MO; const re=/^(\d{4})\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d+)\s+(\d+)\s+(\d+)\s*$/gm; let m; while((m=re.exec(txt))){ const key=`${m[1]}-${String(mo[m[2]]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`; map.set(key,+m[6]); } return map; }
+function parseOM(j){ const h=j.hourly, m=new Map(); h.time.forEach((t,i)=>{ const o={}; for(const k in h){ if(k!=='time') o[k]=h[k][i]; } m.set(Date.parse(t+':00Z'),o); }); return m; }
+function parseNowcast(mag,plasma){
+  const now=Date.now();
+  const m=rowsToObjects(mag).filter(r=>r.active!==false).map(r=>({t:parseUTC(r.time_tag),bz:parseFloat(r.bz_gsm)})).filter(r=>isFinite(r.t)&&isFinite(r.bz));
+  const p=rowsToObjects(plasma).filter(r=>r.active!==false).map(r=>({t:parseUTC(r.time_tag),v:parseFloat(r.speed??r.proton_speed),n:parseFloat(r.density??r.proton_density)})).filter(r=>isFinite(r.t));
+  const last=m[m.length-1]; if(!last) return null;
+  const rm=m.filter(r=>r.t>=now-30*60000), rp=p.filter(r=>r.t>=now-30*60000);
+  const bz=mean(rm.map(r=>r.bz)), bzMin=rm.length?Math.min(...rm.map(r=>r.bz)):null;
+  const v=mean(rp.map(r=>r.v)), n=mean(rp.map(r=>r.n));
+  const stale = now-last.t > 90*60000;
+  let adj=null;
+  if(!stale && bz!=null){ adj=0; if(bz<=-15)adj+=1.5; else if(bz<=-10)adj+=1; else if(bz<=-5)adj+=0.5; else if(bz>=3)adj-=0.5; if(v!=null){ if(v>750)adj+=0.9; else if(v>650)adj+=0.6; else if(v>550)adj+=0.25; } adj=clamp(adj,-0.5,2.5); }
+  return {bz,bzMin,v,n,t:last.t,stale,adj};
+}
+function parseFloors(arr){
+  const now=Date.now(), watch=new Map(), warns=[];
+  const msgs=arr.map(a=>({t:parseUTC(a.issue_datetime),msg:a.message||''})).filter(a=>isFinite(a.t)).sort((x,y)=>y.t-x.t);
+  const w=msgs.find(a=>a.t>=now-72*H && /WATCH:\s*Geomagnetic Storm Category/i.test(a.msg));
+  if(w){ const yr=new Date(w.t).getUTCFullYear(); const re=/([A-Z][a-z]{2})\s+(\d{1,2}):\s+G(\d)/g; let m; while((m=re.exec(w.msg))){ if(MO[m[1]]) watch.set(`${yr}-${String(MO[m[1]]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`,4+(+m[3])-0.8); } }
+  const ts=(msg,label)=>{ const m=msg.match(new RegExp(label+':\\s*(\\d{4})\\s+([A-Za-z]{3})\\s+(\\d{1,2})\\s+(\\d{2})(\\d{2})\\s+UTC')); return m&&MO[m[2]]?Date.UTC(+m[1],MO[m[2]]-1,+m[3],+m[4],+m[5]):null; };
+  msgs.filter(a=>a.t>=now-6*H).forEach(a=>{
+    let m=a.msg.match(/K-index of (\d)\s+expected/i);
+    if(m){ const from=ts(a.msg,'Valid From'), to=ts(a.msg,'Valid To'); if(from&&to&&to>now) warns.push({from,to,kp:+m[1]-0.5}); }
+    m=a.msg.match(/K-index of (\d)\s+Threshold Reached/i);
+    if(m) warns.push({from:a.t-3*H,to:a.t+3*H,kp:+m[1]-0.2});
+  });
+  return {watch,warns};
+}
+function parseAlerts(arr){
+  const cut=Date.now()-48*H;
+  return arr.map(a=>({t:parseUTC(a.issue_datetime),msg:a.message||''})).filter(a=>a.t>=cut && /Geomagnetic|CME|Shock/i.test(a.msg)).sort((x,y)=>y.t-x.t)
+    .map(a=>{ const line=(a.msg.split(/\r?\n/).find(l=>/^(ALERT|WARNING|WATCH|CONTINUED|EXTENDED)/i.test(l.trim()))||'').trim(); return {t:a.t,line}; })
+    .filter(a=>a.line).slice(0,5);
+}
+
+/* ---------- Calcul d'une nuit ---------- */
+function clearFrom(w){ if(!w||w.cloud_cover==null) return null; const c=w.cloud_cover; let cl=c<=15?1:1-(c-15)/85; if((w.precipitation||0)>0.1) cl*=0.1; if(w.visibility!=null&&w.visibility<2000) cl*=0.3; return clamp(cl,0,1); }
+
+function computeNight(i,base,ctx){
+  const now=ctx.now;
+  const d=new Date(base); d.setUTCDate(d.getUTCDate()+i);
+  const y=d.getUTCFullYear(), mo=d.getUTCMonth()+1, da=d.getUTCDate();
+  const start=parisWallToUtc(y,mo,da,17), end=start+15*H;
+  const doy=Math.floor((Date.UTC(y,mo-1,da)-Date.UTC(y,0,0))/DAY);
+  const season=1+0.15*Math.cos(4*Math.PI*(doy-80)/365.25);
+
+  const samples=[]; for(let t=start;t<=end;t+=STEP) samples.push(Object.assign({t},skyAt(t)));
+  const ev=[]; for(let k=1;k<samples.length;k++){ const a=samples[k-1],b=samples[k]; if(a.moonAlt<=0&&b.moonAlt>0) ev.push(['Lever',b.t]); if(a.moonAlt>0&&b.moonAlt<=0) ev.push(['Coucher',b.t]); }
+  const dark=samples.filter(s=>s.sunAlt<-12 && s.t>=now-STEP);
+  const res={i,key:`${y}-${String(mo).padStart(2,'0')}-${String(da).padStart(2,'0')}`,start,end,label:fLong.format(new Date(start+2*H)),day:fDay.format(new Date(start+2*H)),dayNext:fDay.format(new Date(start+18*H)),wd:fWd.format(new Date(start+2*H)),moonEvents:ev,season,dark};
+  if(!dark.length){ res.P=0; res.R=0; res.empty=true; res.blocks=[]; res.verdict='Nuit passée ou sans obscurité suffisante'; return res; }
+
+  const blocksMap=new Map();
+  dark.forEach(s=>{ const b=Math.floor(s.t/(3*H))*3*H; if(!blocksMap.has(b)) blocksMap.set(b,[]); blocksMap.get(b).push(s); });
+  const blocks=[];
+  for(const [b,ss] of blocksMap){
+    const darkMin=ss.length*10, leadDays=Math.max(0,(b+1.5*H-now)/DAY);
+    const info=ctx.kp.get(b), dkey=new Date(b).toISOString().slice(0,10);
+    let kp,sig,src;
+    if(info){ kp=info.kp; src=info.type; sig=src==='observed'?0.25:src==='estimated'?0.4:Math.min(2.4,1.0+0.45*leadDays); }
+    else if(ctx.kp27.has(dkey)){ kp=ctx.kp27.get(dkey)-0.5; sig=2.0; src='outlook'; }
+    else { kp=2; sig=1.5; src='none'; }
+    let floor='';
+    const wf=ctx.floors.watch.get(dkey); if(wf!=null&&kp<wf){ kp=wf; floor='veille NOAA'; }
+    for(const w of ctx.floors.warns){ if(w.from<b+3*H&&w.to>b&&kp<w.kp){ kp=w.kp; floor='alerte NOAA'; } }
+    let adjusted=0;
+    if(ctx.nc && ctx.nc.adj!=null && b<now+3.5*H && b+3*H>now){ adjusted=ctx.nc.adj*((src==='observed'||src==='estimated')?0.5:1); kp+=adjusted; }
+    kp=clamp(kp,0,9);
+    const pg=clamp(pgeoExp(kp,sig)*season,0,0.95);
+    const hrs=[...new Set(ss.map(s=>Math.floor(s.t/H)*H))];
+    const cls=hrs.map(h=>mean([clearFrom(ctx.wxA.get(h)),clearFrom(ctx.wxB.get(h))])).filter(x=>x!=null);
+    const noWx=cls.length===0; const clear=noWx?0.4:mean(cls);
+    const mb=mean(ss.map(s=>moonB(s.moonAlt,s.illum)));
+    const kpAdj=clamp((kp-5)/4,0,1);
+    const mf=1-0.4*mb*(1-0.75*kpAdj);
+    const p=pg*clear*mf*Math.min(1,darkMin/120);
+    blocks.push({floor,b,t0:ss[0].t,t1:ss[ss.length-1].t+STEP,kp,sig,src,adjusted,pg,clear,noWx,mb,mf,p,darkMin,leadDays});
+  }
+  blocks.sort((a,b)=>b.p-a.p);
+  let q=1; blocks.forEach((bl,k)=>{ q*=1-bl.p*(k===0?1:0.3); });
+  const P=Math.min(95,(1-q)*100), best=blocks[0];
+
+  /* météo agrégée */
+  const hrs=[...new Set(dark.map(s=>Math.floor(s.t/H)*H))];
+  const prim=(h,k)=>{ const a=ctx.wxA.get(h), b=ctx.wxB.get(h); return a&&a[k]!=null?a[k]:(b&&b[k]!=null?b[k]:null); };
+  const both=(h,k)=>mean([ctx.wxA.get(h)&&ctx.wxA.get(h)[k], ctx.wxB.get(h)&&ctx.wxB.get(h)[k]]);
+  const spreads=hrs.map(h=>{ const a=clearFrom(ctx.wxA.get(h)), b=clearFrom(ctx.wxB.get(h)); return (a!=null&&b!=null)?Math.abs(a-b):null; });
+  const spread=mean(spreads);
+  const wx={
+    cloud:mean(hrs.map(h=>both(h,'cloud_cover'))), low:mean(hrs.map(h=>both(h,'cloud_cover_low'))), mid:mean(hrs.map(h=>both(h,'cloud_cover_mid'))), high:mean(hrs.map(h=>both(h,'cloud_cover_high'))),
+    temp:mean(hrs.map(h=>prim(h,'temperature_2m'))), wind:mean(hrs.map(h=>prim(h,'wind_speed_10m'))),
+    gust:Math.max(...hrs.map(h=>prim(h,'wind_gusts_10m')).filter(x=>x!=null),-1),
+    spread:Math.min(...hrs.map(h=>{ const t=prim(h,'temperature_2m'), dp=prim(h,'dew_point_2m'); return (t!=null&&dp!=null)?t-dp:null; }).filter(x=>x!=null),99),
+    vis:Math.min(...hrs.map(h=>prim(h,'visibility')).filter(x=>x!=null),1e9),
+    rain:hrs.map(h=>prim(h,'precipitation')).filter(x=>x!=null).reduce((a,b)=>a+b,0),
+    hasWx:hrs.some(h=>ctx.wxA.has(h)||ctx.wxB.has(h)), models:(ctx.wxA.size?1:0)+(ctx.wxB.size?1:0), spreadModels:spread
+  };
+  if(wx.gust<0) wx.gust=null; if(wx.spread>=99) wx.spread=null; if(wx.vis>=1e9) wx.vis=null;
+
+  /* Lune agrégée */
+  const mid=dark[Math.floor(dark.length/2)];
+  const moon={ illum:mean(dark.map(s=>s.illum)), alt:mean(dark.map(s=>s.moonAlt)), maxAlt:Math.max(...dark.map(s=>s.moonAlt)), upShare:dark.filter(s=>s.moonAlt>0).length/dark.length, mb:mean(dark.map(s=>moonB(s.moonAlt,s.illum))), phase:phaseName(mid.phase), phaseVal:mid.phase };
+
+  /* fiabilité */
+  const lead=best.leadDays, li=clamp(Math.round(lead),0,7);
+  let Rg=[0.8,0.6,0.45,0.3,0.15,0.12,0.1,0.1][li];
+  if(best.src==='none') Rg=0.08; else if(best.src==='outlook') Rg=Math.min(Rg,0.15);
+  if(i===0 && ctx.nc && ctx.nc.adj!=null) Rg=Math.min(0.9,Rg+0.08);
+  let Rw=[0.92,0.88,0.82,0.74,0.64,0.55,0.47,0.4][li];
+  Rw*=1-0.6*(spread||0); if(wx.models<2) Rw*=0.9; if(!wx.hasWx) Rw=0.08;
+  const R=Math.sqrt(Rg*Rw);
+
+  Object.assign(res,{P,R,Rg,Rw,blocks,best,wx,moon,darkFrom:dark[0].t,darkTo:dark[dark.length-1].t+STEP});
+  return res;
+}
+const verdict = p => p<2?['Très improbable','v0']:p<8?['Peu probable','v1']:p<20?['Possible','v2']:p<40?['Probable','v3']:['Très favorable','v4'];
+const relLabel = r => r>=0.6?'bonne':r>=0.35?'moyenne':'faible';
+const fmtP = p => p<1?'<1':String(Math.round(p));
+const dur = ms => { const m=Math.round(ms/60000); return `${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`; };
+const srcLabel = s => ({observed:'Observé',estimated:'Estimé',predicted:'Prévision NOAA 3 jours',outlook:'Tendance NOAA 27 jours',none:'Donnée indisponible'}[s]||s);
+
+function why(n){
+  if(n.empty) return 'Nuit déjà écoulée ou trop claire.';
+  const b=n.best;
+  if(b.pg<0.05) return `Activité géomagnétique insuffisante (Kp ≈ ${n1(b.kp)}).`;
+  if(b.clear<0.35) return `Ciel majoritairement couvert (nuages ≈ ${n0(n.wx.cloud)} %).`;
+  if(b.mf<0.8) return 'Lune gênante pour les aurores faibles.';
+  return `Activité et ciel compatibles (Kp ≈ ${n1(b.kp)}) : à confirmer en direct.`;
+}
+function tips(n){
+  const t=[], w=n.wx, m=n.moon, b=n.best;
+  if(w.vis!=null&&w.vis<2000) t.push('Brouillard probable au sommet (visibilité sous 2 km).');
+  if(w.spread!=null&&w.spread<2) t.push('Température proche du point de rosée : prévoir un manchon chauffant ou des lingettes anti-buée.');
+  if(w.gust!=null&&w.gust>55) t.push(`Rafales jusqu'à ${n0(w.gust)} km/h : trépied lesté, poses courtes.`);
+  if(w.temp!=null&&w.temp<-3) t.push('Froid marqué : batteries de rechange au chaud, près du corps.');
+  if(w.rain>0.3) t.push('Précipitations attendues pendant la nuit.');
+  if(m.mb>0.35) t.push('Lune lumineuse : baissez un peu les ISO et raccourcissez la pose ; le paysage éclairé peut compenser.');
+  if(n.darkTo-n.darkFrom<4*H) t.push('Nuit courte : peu de temps réellement sombre.');
+  const intense=b.kp>=7;
+  t.push(intense?'Si l’aurore est intense : f/2–2,8, 1–4 s, ISO 800–3200.':'Si l’aurore est faible : f/1,4–2,8, 5–10 s, ISO 3200–6400, RAW, mise au point manuelle sur une étoile.');
+  return t;
+}
+function auBody(n){
+  if(n.empty) return '';
+  const [vl,vc]=verdict(n.P), w=n.wx, m=n.moon, b=n.best;
+  const rel=Math.round(n.R*100);
+  const open=n.i===0?' open':'';
+  const moonImpact=b.mf>=0.9?'faible':b.mf>=0.75?'modéré':'fort';
+  const ev=n.moonEvents.map(e=>`${e[0]} ${hm(e[1])}`).join(', ')||(m.upShare>0.5?'Levée toute la nuit':'Sous l’horizon');
+  const rows=[...n.blocks].sort((x,y)=>x.b-y.b).map(k=>`<tr><td>${hm(k.t0)}–${hm(k.t1)}</td><td>${n1(k.kp)}${k.adjusted?' *':''}</td><td>${k.noWx?'n.d.':n0(k.clear*100)+' %'}</td><td>${n0(k.mb*100)} %</td><td><b>${fmtP(k.p*100)} %</b></td></tr>`).join('');
+  const tp=tips(n);
+  const hasWarn=tp.length>1;
+  return `<div class="body">
+    <div class="cols">
+      <section><h4>Phénomène</h4><dl>
+        <div><dt>Kp retenu (meilleur créneau)</dt><dd>${n1(b.kp)} (${gScale(b.kp)})</dd></div>
+        <div><dt>Source</dt><dd>${srcLabel(b.src)}</dd></div>
+        <div><dt>Incertitude du Kp</dt><dd>± ${n1(b.sig)}</dd></div>
+        <div><dt>Chance géomagnétique seule</dt><dd>${fmtP(b.pg*100)} %</dd></div>
+        ${b.floor?`<div><dt>Plancher appliqué</dt><dd>${b.floor}</dd></div>`:''}
+        ${b.adjusted?`<div><dt>Ajustement temps réel</dt><dd>${b.adjusted>=0?'+':''}${n1(b.adjusted)} Kp</dd></div>`:''}
+        <div><dt>Facteur saisonnier</dt><dd>× ${n1(n.season).replace(',','.')}</dd></div>
+        <div><dt>Fiabilité géomagnétique</dt><dd>${Math.round(n.Rg*100)} %</dd></div>
+      </dl></section>
+      <section><h4>Météo au sommet</h4><dl>
+        ${w.hasWx?`
+        <div><dt>Nuages (moyenne nuit sombre)</dt><dd>${n0(w.cloud)} %</dd></div>
+        <div><dt>Bas / moyens / hauts</dt><dd>${n0(w.low)} / ${n0(w.mid)} / ${n0(w.high)} %</dd></div>
+        <div><dt>Ciel dégagé effectif</dt><dd>${n0(b.clear*100)} % (créneau clé)</dd></div>
+        <div><dt>Visibilité minimale</dt><dd>${w.vis!=null?n1(w.vis/1000)+' km':'n.d.'}</dd></div>
+        <div><dt>Précipitations</dt><dd>${n1(w.rain)} mm</dd></div>
+        <div><dt>Vent moyen / rafales max</dt><dd>${n0(w.wind)} / ${n0(w.gust)} km/h</dd></div>
+        <div><dt>Température / écart à la rosée</dt><dd>${n0(w.temp)} °C / ${w.spread!=null?n1(w.spread)+' °C':'n.d.'}</dd></div>
+        <div><dt>Accord entre modèles</dt><dd>${w.spreadModels!=null?(w.spreadModels<0.15?'bon':w.spreadModels<0.3?'moyen':'faible'):'un seul modèle'}</dd></div>
+        <div><dt>Fiabilité météo</dt><dd>${Math.round(n.Rw*100)} %</dd></div>`
+        :`<div><dt>Prévision indisponible</dt><dd>estimation par défaut</dd></div>`}
+      </dl></section>
+      <section><h4>Lune</h4><dl>
+        <div><dt>Phase</dt><dd>${m.phase}</dd></div>
+        <div><dt>Éclairement moyen</dt><dd>${n0(m.illum*100)} %</dd></div>
+        <div><dt>Lever / coucher</dt><dd>${esc(ev)}</dd></div>
+        <div><dt>Lune levée (nuit sombre)</dt><dd>${n0(m.upShare*100)} %</dd></div>
+        <div><dt>Hauteur maximale</dt><dd>${m.maxAlt>0?n0(m.maxAlt)+'°':'sous l’horizon'}</dd></div>
+        <div><dt>Gêne pour l’aurore</dt><dd>${moonImpact}</dd></div>
+      </dl></section>
+      <section><h4>Autres conditions</h4><dl>
+        <div><dt>Nuit sombre (Soleil &lt; −12°)</dt><dd>${hm(n.darkFrom)}–${hm(n.darkTo)} (${dur(n.darkTo-n.darkFrom)})</dd></div>
+        <div><dt>Créneau le plus favorable</dt><dd>${hm(b.t0)}–${hm(b.t1)}</dd></div>
+        <div><dt>Horizon nord</dt><dd>Dégagé requis ; Strasbourg ternit le nord-est</dd></div>
+        <div><dt>Mise au point et cadrage</dt><dd>Plein nord, premier plan de crêtes</dd></div>
+      </dl></section>
+    </div>
+    <table><caption>Créneaux de la nuit</caption><thead><tr><th>Heure</th><th>Kp</th><th>Ciel dégagé</th><th>Éclairage lunaire</th><th>Chance</th></tr></thead><tbody>${rows}</tbody></table>
+    ${n.blocks.some(k=>k.adjusted)?'<p class="note">* Kp ajusté avec les mesures du vent solaire en direct.</p>':''}
+    <div class="tips${hasWarn?'':' ok'}"><b>Pour la prise de vue</b><ul>${tp.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+  </div>`;
+}
+function renderLive(ctx){
+  let html='';
+  const cur=[...ctx.kp.entries()].filter(([t,v])=>t<=ctx.now&&(v.type==='observed'||v.type==='estimated')).sort((a,b)=>b[0]-a[0])[0];
+  const nc=ctx.nc;
+  const cell=(k,v,s)=>`<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  html+='<div class="live">';
+  html+=cell('Kp en cours',cur?n1(cur[1].kp):'–',cur?`${gScale(cur[1].kp)} · créneau de ${hm(cur[0])}`:'indisponible');
+  if(nc){
+    const bzTxt=nc.bz==null?'–':n1(nc.bz)+' nT';
+    html+=cell('Bz (moy. 30 min)',bzTxt,nc.bz==null?'':nc.bz<=-10?'très favorable si durable':nc.bz<=-5?'favorable':nc.bz>=3?'défavorable (nord)':'neutre');
+    html+=cell('Vitesse du vent solaire',nc.v!=null?n0(nc.v)+' km/s':'–',nc.v!=null?(nc.v>600?'rapide':nc.v>500?'soutenue':'normale'):'');
+    html+=cell('Densité',nc.n!=null?n1(nc.n)+' p/cm³':'–',`mesure de ${hm(nc.t)}${nc.stale?' (ancienne)':''}`);
+  } else html+=cell('Vent solaire','–','indisponible');
+  html+='</div>';
+  html+='<p class="note" style="margin-top:12px">Les satellites en amont mesurent le vent solaire environ 30 à 60 minutes avant son effet sur la Terre : un Bz durablement sous −10 nT avec une vitesse supérieure à 500 km/s est le signal à guetter avant de monter.</p>';
+  if(ctx.alerts&&ctx.alerts.length) html+='<ul class="alerts">'+ctx.alerts.map(a=>`<li><b>${fHM.format(new Date(a.t))}</b> ${fDay.format(new Date(a.t))}/${String(parisParts(a.t).m).padStart(2,'0')} · ${esc(a.line)}</li>`).join('')+'</ul>';
+  return html;
+}
+
+async function load(omP){
+  const jobs=[
+    ['Kp NOAA (prévision 3 jours)',()=>noaa('products/noaa-planetary-k-index-forecast.json'),['products/noaa-planetary-k-index-forecast.json']],
+    ['Perspective NOAA 27 jours',()=>noaa('text/27-day-outlook.txt','text'),['text/27-day-outlook.txt']],
+    ['Champ magnétique Bz (NOAA)',()=>noaaAny(['products/solar-wind/mag-2-hour.json','products/solar-wind/mag-1-day.json','json/rtsw/rtsw_mag_1m.json']),['products/solar-wind/mag-2-hour.json','products/solar-wind/mag-1-day.json','json/rtsw/rtsw_mag_1m.json']],
+    ['Plasma solaire (NOAA)',()=>noaaAny(['products/solar-wind/plasma-2-hour.json','products/solar-wind/plasma-1-day.json','json/rtsw/rtsw_wind_1m.json']),['products/solar-wind/plasma-2-hour.json','products/solar-wind/plasma-1-day.json','json/rtsw/rtsw_wind_1m.json']],
+    ['Alertes NOAA',()=>noaa('products/alerts.json'),['products/alerts.json']],
+    ['Météo Open-Meteo (modèle par défaut)',()=>omP,[]],
+    ['Météo Open-Meteo (ECMWF IFS)',()=>fetchWith(omURL('ecmwf_ifs025',VARS_B)),[]]
+  ];
+  const out=await Promise.allSettled(jobs.map(j=>j[1]()));
+  const st=out.map((r,i)=>({name:jobs[i][0],ok:r.status==='fulfilled',detail:r.status==='rejected'?String(r.reason&&r.reason.message||r.reason):(jobs[i][2].some(p=>viaRelay.has(p))?'via relais public':'')}));
+  const safe=(i,fn,def)=>{ if(out[i].status!=='fulfilled') return def; try{ return fn(out[i].value); }catch(e){ st[i].ok=false; st[i].detail='format inattendu'; return def; } };
+  const now=Date.now();
+  const conv=v=>{ const m=parseOM(v); m.forEach(o=>{ if(o.wind_speed_10m!=null) o.wind_speed_10m*=3.6; if(o.wind_gusts_10m!=null) o.wind_gusts_10m*=3.6; }); return m; };
+  const ctx={
+    now,
+    kp:safe(0,parseKp,new Map()), kp27:safe(1,parse27,new Map()),
+    nc:(out[2].status==='fulfilled'&&out[3].status==='fulfilled')?safe(2,v=>parseNowcast(v,out[3].value),null):null,
+    alerts:safe(4,parseAlerts,[]), floors:safe(4,parseFloors,{watch:new Map(),warns:[]}),
+    wxA:safe(5,conv,new Map()), wxB:safe(6,parseOM,new Map())
+  };
+  const p0=parisParts(now); const base=new Date(Date.UTC(p0.y,p0.m-1,p0.d)); if(p0.h<8) base.setUTCDate(base.getUTCDate()-1);
+  const list=[]; for(let i=0;i<15;i++) list.push(computeNight(i,base,ctx));
+  const errs=[];
+  if(st.every(s=>!s.ok)) errs.push('Aucune donnée aurore n’a pu être récupérée. Ouvrez ce fichier directement dans votre navigateur (double-clic), hors aperçu intégré.');
+  else if(st.slice(0,5).every(s=>!s.ok)) errs.push('Les données NOAA restent inaccessibles, même via relais : une extension de blocage ou un réseau filtrant peut en être la cause.');
+  else {
+    if(!st[0].ok) errs.push('Prévision Kp indisponible : la chance d’aurore est estimée par défaut et la fiabilité est très basse.');
+    if(!st[5].ok&&!st[6].ok) errs.push('Prévision météo indisponible : le ciel est supposé à 40 % de dégagement pour l’aurore.');
+  }
+  return {byKey:new Map(list.map(n=>[n.key,n])),list,ctx,st,errs};
+}
+window.AUR={load,auBody,renderLive,verdict,fmtP,relLabel,gScale,n0,n1,hm,esc,_t:{computeNight,parseOM,parseKp,parse27,parisParts}};
+})();
+/* ===== Fin module aurores ===== */
+
+const LAT=48.386, LON=7.269, ELEV=1099, TZ='Europe/Paris', R=Math.PI/180, NIGHTS=15;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+
+/* Soleil et Lune (formules approchées) */
+function astro(ms){
+  const d=ms/86400000+2440587.5-2451545.0;
+  const gmst=(280.46061837+360.98564736629*d)%360;
+  const sg=(357.528+0.9856003*d)*R, sl=(280.460+0.9856474*d+1.915*Math.sin(sg)+0.02*Math.sin(2*sg))*R;
+  const ob=(23.439-0.0000004*d)*R;
+  const alt=(lon,lat)=>{
+    const ra=Math.atan2(Math.sin(lon)*Math.cos(ob)-Math.tan(lat)*Math.sin(ob),Math.cos(lon));
+    const dec=Math.asin(Math.sin(lat)*Math.cos(ob)+Math.cos(lat)*Math.sin(ob)*Math.sin(lon));
+    const H=(gmst+LON)*R-ra;
+    return Math.asin(Math.sin(LAT*R)*Math.sin(dec)+Math.cos(LAT*R)*Math.cos(dec)*Math.cos(H))/R;
+  };
+  const ml=(218.316+13.176396*d)*R, mm=(134.963+13.064993*d)*R, mf=(93.272+13.229350*d)*R;
+  const mlon=ml+6.289*R*Math.sin(mm), mlat=5.128*R*Math.sin(mf);
+  const el=mlon-sl;
+  return {sun:alt(sl,0), moon:alt(mlon,mlat), illum:(1-Math.cos(el))/2, waxing:Math.sin(el)>0};
+}
+const moonName=(i,w)=>i<.03?'Nouvelle Lune':i>.97?'Pleine Lune':Math.abs(i-.5)<.04?(w?'Premier quartier':'Dernier quartier'):i<.5?(w?'Premier croissant':'Dernier croissant'):(w?'Gibbeuse croissante':'Gibbeuse décroissante');
+
+/* Image de la Lune : SVG avec mers lunaires, phase et lumière cendrée */
+let moonId=0;
+const MARIA=[[-.25,-.32,.23],[.15,-.3,.13],[.32,-.06,.17],[.62,-.2,.08],[-.58,0,.21],[-.2,.36,.14],[.1,.05,.1],[.45,.3,.07]];
+function moonSVG(f,waxing,size){
+  const id='m'+(moonId++), r=50, rx=r*Math.abs(1-2*f);
+  const sweep=f<.5?0:1;
+  let lit;
+  if(f<.02) lit=''; else if(f>.98) lit=`M-50,0 A50,50 0 1 1 50,0 A50,50 0 1 1 -50,0Z`;
+  else lit=`M0,-50 A50,50 0 0 1 0,50 A${rx.toFixed(2)},50 0 0 ${sweep} 0,-50Z`;
+  const tf=waxing?'':'scale(-1,1)';
+  const maria=MARIA.map(([x,y,s])=>`<circle cx="${x*r}" cy="${y*r}" r="${s*r}"/>`).join('');
+  return `<svg width="${size}" height="${size}" viewBox="-52 -52 104 104" role="img" aria-label="Lune éclairée à ${Math.round(f*100)} %">
+  <defs><clipPath id="${id}"><path d="${lit}" transform="${tf}"/></clipPath>
+  <radialGradient id="${id}g"><stop offset="75%" stop-color="#fff" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".35"/></radialGradient></defs>
+  <circle r="${r}" fill="#1c2638"/><g fill="#2a3650" opacity=".8">${maria}</g>
+  <g clip-path="url(#${id})"><circle r="${r}" fill="#ece8d8"/><g fill="#a9a595" opacity=".75">${maria}</g><circle r="${r}" fill="url(#${id}g)"/></g>
+  <circle r="${r}" fill="none" stroke="#3a4a6a" stroke-width="1"/></svg>`;
+}
+
+const fmtDay=new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'long',day:'numeric',month:'long'});
+const fmtShort=new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'short',day:'numeric',month:'short'});
+const fmtH=new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+const parisDate=ms=>new Date(ms).toLocaleDateString('sv-SE',{timeZone:TZ});
+
+const hourly=['temperature_2m','relative_humidity_2m','dew_point_2m','cloud_cover','cloud_cover_low','cloud_cover_mid','cloud_cover_high','visibility','wind_speed_10m','wind_gusts_10m','wind_speed_250hPa','wind_speed_700hPa','precipitation'].join(',');
+const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&elevation=${ELEV}&hourly=${hourly}&wind_speed_unit=ms&timezone=GMT&forecast_days=16`;
+
+function score(h,a,dT){
+  const cloudDS=Math.pow(1-Math.max(h.low,h.mid,.7*h.high)/100,1.5);
+  const cloudPL=Math.pow(1-Math.max(h.low,h.mid,.3*h.high)/100,1.5);
+  const rain=h.precip>0.1?0:1;
+  const hum=clamp((100-h.rh)/40), dew=clamp((h.t-h.td-0.5)/3), vis=clamp(h.vis/20000);
+  const wind=clamp(1-(Math.max(h.gust*.6,h.w10)-3)/9);
+  const moonPen=a.moon>0?a.illum*clamp(a.moon/30)*.75:0;
+  const ds=100*cloudDS*rain*(.35*hum+.25*dew+.2*vis+.2*wind)*(1-moonPen);
+  const seeing=h.j250==null?.5:.65*clamp(1-(h.j250-15)/30)+.35*clamp(1-Math.abs(h.j250-(h.j700??h.j250))/40);
+  const therm=clamp(1-(Math.abs(dT)-.5)/2.5);
+  const pl=100*cloudPL*rain*(.6*seeing+.2*wind+.2*therm);
+  return {ds:Math.round(ds),pl:Math.round(pl),seeing:Math.round(seeing*100)};
+}
+const col=s=>`hsl(${s*1.2},65%,${s>50?34:38}%)`;
+
+function bestWindow(cells,key,n=3){
+  if(cells.length<n) return null;
+  let b=-1,bi=0;
+  for(let i=0;i<=cells.length-n;i++){
+    const m=cells.slice(i,i+n).reduce((s,c)=>s+c[key],0)/n;
+    if(m>b){b=m;bi=i}
+  }
+  return {avg:Math.round(b),from:cells[bi].ms,to:cells[bi+n-1].ms+3600000};
+}
+
+async function init(){
+  const st=document.getElementById('status');
+  try{
+    const omP=fetch(url).then(r=>{if(!r.ok) throw new Error('HTTP '+r.status);return r.json()});
+    omP.catch(()=>{});
+    const aurP=AUR.load(omP);
+    const j=await omP, H=j.hourly, nights={};
+    H.time.forEach((t,i)=>{
+      if(H.cloud_cover[i]==null||H.temperature_2m[i]==null) return;
+      const ms=Date.parse(t+':00Z'), a=astro(ms);
+      if(ms<Date.now()-3600000) return;
+      if(a.sun>-12) return;
+      const h={t:H.temperature_2m[i],rh:H.relative_humidity_2m[i],td:H.dew_point_2m[i],cloud:H.cloud_cover[i],low:H.cloud_cover_low[i],mid:H.cloud_cover_mid[i],high:H.cloud_cover_high[i],vis:H.visibility[i]??24000,w10:H.wind_speed_10m[i],gust:H.wind_gusts_10m[i],j250:H.wind_speed_250hPa[i],j700:H.wind_speed_700hPa[i],precip:H.precipitation[i]??0};
+      const dT=i>0&&H.temperature_2m[i-1]!=null?h.t-H.temperature_2m[i-1]:0;
+      const s=score(h,a,dT);
+      (nights[parisDate(ms-12*3600000)]=nights[parisDate(ms-12*3600000)]||[]).push({ms,h,a,dT,...s});
+    });
+    const keys=Object.keys(nights).sort().slice(0,NIGHTS);
+    const aur=await aurP;
+    const box=document.getElementById('nights'), ov=document.getElementById('overview');
+    box.innerHTML=''; ov.innerHTML='';
+    keys.forEach((k,idx)=>{
+      const cells=nights[k], mid=cells[Math.floor(cells.length/2)];
+      const bd=bestWindow(cells,'ds'), bp=bestWindow(cells,'pl');
+      const trend=idx>=7, name=moonName(mid.a.illum,mid.a.waxing);
+      const date=new Date(k+'T12:00:00Z');
+      const an=aur.byKey.get(k), auOk=!!(an&&!an.empty);
+      const auTxt=auOk?AUR.fmtP(an.P):'–', auC=auOk?auColor(an.P):'#2a3650', fiab=auOk?Math.round(an.R*100):null;
+      cells.forEach(c=>{c.au=auOk?an.blocks.find(x=>c.ms>=x.b&&c.ms<x.b+3*3600000)||null:null});
+
+      const tile=document.createElement('button'); tile.className='tile';
+      tile.innerHTML=`<b>${fmtShort.format(date)}</b>${moonSVG(mid.a.illum,mid.a.waxing,40)}
+        <div>${Math.round(mid.a.illum*100)} %</div>
+        <div class="sc"><span style="background:${col(bd?bd.avg:0)}" title="Ciel profond">CP ${bd?bd.avg:'–'}</span><span style="background:${col(bp?bp.avg:0)}" title="Planétaire">PL ${bp?bp.avg:'–'}</span><span style="background:${auC}" title="Chance d'aurore">AU ${auTxt}</span></div>${auOk?`<div class="fiab">fiabilité aurore ${fiab} %</div>`:''}`;
+      tile.onclick=()=>document.getElementById('n'+k).scrollIntoView({behavior:'smooth'});
+      ov.appendChild(tile);
+
+      const el=document.createElement('section'); el.className='night'; el.id='n'+k;
+      el.innerHTML=`<div class="head">${moonSVG(mid.a.illum,mid.a.waxing,52)}<div class="t"><b>Nuit du ${new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,weekday:'long',day:'numeric'}).format(date)} au ${fmtDay.format(new Date(date.getTime()+86400000))}</b>${trend?'<span class="flag">tendance</span>':''}<div class="note">${name}, ${Math.round(mid.a.illum*100)} % éclairée</div></div></div>`;
+      const w=x=>x?`${fmtH.format(x.from)} – ${fmtH.format(x.to)} (moy. ${x.avg})`:'nuit trop courte';
+      [['Ciel profond','ds',bd],['Planétaire','pl',bp]].forEach(([n,key,b])=>{
+        const row=document.createElement('div'); row.className='row';
+        row.innerHTML=`<span class="lbl">${n}</span>`;
+        const strip=document.createElement('div'); strip.className='strip';
+        cells.forEach(c=>{
+          const b2=document.createElement('button'); b2.className='c'; b2.style.background=col(c[key]);
+          b2.textContent=new Date(c.ms).toLocaleTimeString('fr-FR',{timeZone:TZ,hour:'2-digit'}).replace(/\D/g,'')+'h';
+          b2.title=`${n} : ${c[key]}/100`;
+          b2.onclick=()=>{document.querySelectorAll('.c.sel').forEach(x=>x.classList.remove('sel'));b2.classList.add('sel');detail(c)};
+          strip.appendChild(b2);
+        });
+        row.appendChild(strip); el.appendChild(row);
+        const p=document.createElement('div'); p.className='best'; p.textContent='Meilleure fenêtre 3 h : '+w(b); el.appendChild(p);
+      });
+      if(auOk){
+        const row=document.createElement('div'); row.className='row';
+        row.innerHTML='<span class="lbl">Aurore</span>';
+        const strip=document.createElement('div'); strip.className='strip';
+        cells.forEach(c=>{
+          const p=c.au?c.au.p*100:0, b2=document.createElement('button'); b2.className='c'; b2.style.background=auColor(p);
+          b2.textContent=new Date(c.ms).toLocaleTimeString('fr-FR',{timeZone:TZ,hour:'2-digit'}).replace(/\D/g,'')+'h';
+          b2.title=c.au?`Aurore : ${AUR.fmtP(p)} % (Kp ${AUR.n1(c.au.kp)})`:'Aurore : donnée indisponible';
+          b2.onclick=()=>{document.querySelectorAll('.c.sel').forEach(x=>x.classList.remove('sel'));b2.classList.add('sel');detail(c)};
+          strip.appendChild(b2);
+        });
+        row.appendChild(strip); el.appendChild(row);
+        const pa=document.createElement('div'); pa.className='best';
+        pa.innerHTML=`Chance d'aurore sur la nuit : <b>${AUR.fmtP(an.P)} %</b> (${AUR.verdict(an.P)[0].toLowerCase()}) · fiabilité ${fiab} % (${AUR.relLabel(an.R)}) · Kp retenu ${AUR.n1(an.best.kp)} (${AUR.gScale(an.best.kp)})`;
+        el.appendChild(pa);
+        const det=document.createElement('details'); det.className='aud';
+        det.innerHTML='<summary>Détail aurore : phénomène, météo, Lune, créneaux</summary>'+AUR.auBody(an);
+        el.appendChild(det);
+      }
+      box.appendChild(el);
+    });
+    const okN=aur.list.filter(n=>!n.empty), top=okN.length?okN.reduce((a,b)=>b.P>a.P?b:a):null;
+    st.textContent=`Prévisions chargées à ${fmtH.format(new Date())}. ${keys.length} nuits affichées ; seules les heures où le Soleil est à moins de −12° sont montrées.`+(top?` Meilleure nuit pour l'aurore : ${top.label} (${AUR.fmtP(top.P)} %, fiabilité ${Math.round(top.R*100)} %).`:'');
+    document.getElementById('live').innerHTML=AUR.renderLive(aur.ctx);
+    document.getElementById('auerr').innerHTML=aur.errs.map(e=>`<div class="err">${AUR.esc(e)}</div>`).join('');
+    document.getElementById('sources').innerHTML=aur.st.map(s=>`<li><span>${AUR.esc(s.name)}</span><span class="${s.ok?'ok':'ko'}">${s.ok?'OK':'Échec'}${s.detail?' · '+AUR.esc(s.detail):''}</span></li>`).join('');
+  }catch(e){
+    st.innerHTML='Impossible de charger les données ('+e.message+'). Vérifiez la connexion et ouvrez ce fichier depuis votre ordinateur ou un serveur web.';
+  }
+}
+function detail(c){
+  const h=c.h, f=v=>v==null?'n/d':v.toFixed(0);
+  document.getElementById('detail').innerHTML=`${moonSVG(c.a.illum,c.a.waxing,44)}<div><b>${fmtDay.format(new Date(c.ms))}, ${fmtH.format(new Date(c.ms))}</b> : ciel profond <b>${c.ds}</b>, planétaire <b>${c.pl}</b> (seeing estimé ${c.seeing}/100)<br>
+  Nuages ${h.cloud} % (bas ${h.low}, moyens ${h.mid}, hauts ${h.high}) · T ${h.t.toFixed(1)} °C, rosée ${h.td.toFixed(1)} °C (écart ${(h.t-h.td).toFixed(1)} °C) · HR ${h.rh} % · Visibilité ${(h.vis/1000).toFixed(0)} km<br>
+  Vent ${h.w10.toFixed(1)} m/s, rafales ${h.gust.toFixed(1)} m/s · Jet 250 hPa ${f(h.j250)} m/s · Lune ${c.a.moon.toFixed(0)}° au-dessus de l'horizon (${Math.round(c.a.illum*100)} %)${c.au?`<br>Aurore (créneau ${AUR.hm(c.au.t0)}–${AUR.hm(c.au.t1)}) : Kp ${AUR.n1(c.au.kp)} (${AUR.gScale(c.au.kp)}), chance ${AUR.fmtP(c.au.p*100)} %`:''}</div>`;
+}
+const auColor=p=>col(Math.min(100,p*2.5));
+let running=false;
+async function refresh(){
+  if(running) return; running=true;
+  const b=document.getElementById('refresh'); b.disabled=true;
+  document.getElementById('status').textContent='Chargement des prévisions…';
+  try{ await init(); } finally{ b.disabled=false; running=false; }
+}
+document.getElementById('refresh').onclick=refresh;
+document.getElementById('redmode').onclick=e=>{const on=document.body.classList.toggle('red'); e.currentTarget.setAttribute('aria-pressed',on)};
+refresh(); setInterval(refresh,15*60000);
+</script>
+</body>
+</html>
